@@ -106,10 +106,35 @@
     }
 
     .quick-hints {
-      padding: 4px 16px 8px;
+      padding: 4px 16px 4px;
       font-size: 11px;
       color: #9ca3af;
     }
+
+    /* selectable topic options */
+    .topic-options {
+      padding: 0 16px 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .topic-btn {
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+      padding: 6px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      color: #4b5563;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .topic-btn:hover {
+      background: #4f46e5;
+      color: #ffffff;
+      border-color: #4f46e5;
+      box-shadow: 0 3px 8px rgba(79, 70, 229, 0.25);
+    }
+
     .chat-window {
       padding: 16px;
       background: #f4f5fb;
@@ -201,7 +226,7 @@
         border-radius: 20px;
       }
       .chat-window {
-        max-height: calc(100vh - 200px);
+        max-height: calc(100vh - 220px);
       }
     }
   </style>
@@ -225,7 +250,13 @@
     </div>
 
     <div class="quick-hints">
-      Try: "How do I apply?", "Do you hire fresh graduates?", "Can I negotiate salary?"
+      You can ask me about:
+    </div>
+    <div class="topic-options">
+      <button class="topic-btn" data-topic="applications">Job applications & required documents</button>
+      <button class="topic-btn" data-topic="interviews">Interviews (process, preparation, rescheduling)</button>
+      <button class="topic-btn" data-topic="internal">Internal vacancies & promotions</button>
+      <button class="topic-btn" data-topic="offers">Offers, salary discussion & onboarding</button>
     </div>
 
     <div id="chat-window" class="chat-window"></div>
@@ -370,10 +401,38 @@
       }
     ];
 
+    const TOPIC_RESPONSES = {
+      applications:
+        "Great, let's talk about job applications & required documents. 📄\n\n" +
+        "You can ask me things like:\n" +
+        "• How can I apply for a job at TechNova?\n" +
+        "• What documents do I need to submit with the application?\n" +
+        "• How long does the selection process take?",
+      interviews:
+        "Interviews can feel stressful, but I’ve got you. 🎯\n\n" +
+        "You can ask about:\n" +
+        "• How should I prepare for my interview?\n" +
+        "• Will interviews be physical or online?\n" +
+        "• What happens if I can’t attend the scheduled interview?",
+      internal:
+        "Internal growth is important at TechNova. 🚀\n\n" +
+        "You can ask about:\n" +
+        "• How can current employees apply for internal vacancies?\n" +
+        "• Can interns apply for permanent jobs?\n" +
+        "• What is the eligibility for internal promotions?",
+      offers:
+        "Offers, salary & onboarding – exciting stuff! 🎉\n\n" +
+        "You can ask about:\n" +
+        "• How will I receive my job offer?\n" +
+        "• Can I negotiate my salary?\n" +
+        "• When does onboarding start?"
+    };
+
     const chatWindow = document.getElementById("chat-window");
     const userInput = document.getElementById("user-input");
     const sendBtn = document.getElementById("send-btn");
     const modeButtons = document.querySelectorAll(".mode-btn");
+    const topicButtons = document.querySelectorAll(".topic-btn");
 
     let currentMode = "recruitment";
     let generalOpened = false;
@@ -401,16 +460,15 @@
     function getRecruitmentResponse(message) {
       const normalized = message.toLowerCase().trim();
 
-      // 1) special handling for greetings
+      // 1) greetings
       if (isGreeting(message)) {
         return (
           "Hi there! 👋\n" +
           "I'm TechNova's Recruitment Assistant.\n" +
-          "You can ask me things like:\n" +
+          "You can tap one of the options above or ask me questions like:\n" +
           "• How do I apply for a job?\n" +
           "• Do you hire fresh graduates?\n" +
-          "• Can I negotiate my salary?\n" +
-          "• How do internal promotions work?"
+          "• Can I negotiate my salary?"
         );
       }
 
@@ -445,7 +503,7 @@
       if (!best || bestScore < MIN_SCORE) {
         return (
           "I’m mainly designed to help with recruitment & talent acquisition at TechNova 😊\n\n" +
-          "You can ask me about:\n" +
+          "You can tap one of the options above or ask me about:\n" +
           "• Job applications & required documents\n" +
           "• Interviews (process, preparation, rescheduling)\n" +
           "• Internal vacancies & promotions\n" +
@@ -465,7 +523,6 @@
       appendMessage("user", text);
       userInput.value = "";
 
-      // Mode-specific behaviour
       if (currentMode === "general") {
         const info =
           "This question is being handled by our general AI assistant.\n\n" +
@@ -475,7 +532,6 @@
         setTimeout(() => {
           appendMessage("bot", info);
           if (!generalOpened) {
-            // open once per session; you can remove this if you want every message to open a tab
             window.open(GENERAL_AI_URL, "_blank");
             generalOpened = true;
           }
@@ -483,7 +539,6 @@
         return;
       }
 
-      // Recruitment mode
       const botReply = getRecruitmentResponse(text);
       setTimeout(() => {
         appendMessage("bot", botReply);
@@ -520,10 +575,40 @@
       });
     });
 
+    // Topic option buttons
+    topicButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const topic = btn.dataset.topic;
+        const userText = btn.textContent;
+
+        // if user is in general mode, switch back to recruitment
+        if (currentMode !== "recruitment") {
+          currentMode = "recruitment";
+          modeButtons.forEach(b => {
+            b.classList.toggle("active", b.dataset.mode === "recruitment");
+          });
+          appendMessage(
+            "bot",
+            "I’ve switched you back to Recruitment Q&A mode so I can answer this topic properly. 😊"
+          );
+        }
+
+        appendMessage("user", userText);
+
+        const reply =
+          TOPIC_RESPONSES[topic] ||
+          "You can ask any detailed question about this area, and I'll do my best to help.";
+
+        setTimeout(() => {
+          appendMessage("bot", reply);
+        }, 200);
+      });
+    });
+
     // Initial greeting
     appendMessage(
       "bot",
-      "Hello! 👋 I'm TechNova's Recruitment Assistant.\nYou can ask me about job applications, interviews, internal opportunities, offers, and more."
+      "Hello! 👋 I'm TechNova's Recruitment Assistant.\nTap one of the options above or ask me about job applications, interviews, internal opportunities, offers, and more."
     );
   </script>
 </body>
