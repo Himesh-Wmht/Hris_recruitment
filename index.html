@@ -329,18 +329,48 @@
       chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 
+    // Detect greeting like "Hi", "Hy", "Hello", "Hey"
+    function isGreeting(message) {
+      const text = message.trim().toLowerCase();
+      const greetings = [
+        "hi",
+        "hy",
+        "hello",
+        "hey",
+        "hiya",
+        "good morning",
+        "good afternoon",
+        "good evening"
+      ];
+      return greetings.some(g => text === g || text.startsWith(g + " "));
+    }
+
     function getBotResponse(message) {
-      const normalized = message.toLowerCase();
+      const normalized = message.toLowerCase().trim();
+
+      // 1. Handle greetings with a warm reply + emoji 👋
+      if (isGreeting(normalized)) {
+        return (
+          "Hi there! 👋\n" +
+          "I'm TechNova's Recruitment Assistant.\n" +
+          "You can ask me things like:\n" +
+          "• How do I apply for a job?\n" +
+          "• Do you hire fresh graduates?\n" +
+          "• Can I negotiate my salary?\n" +
+          "• How do internal promotions work?"
+        );
+      }
+
+      // 2. FAQ matching logic
+      const msgWords = normalized.split(/\W+/).filter(Boolean);
       let best = null;
       let bestScore = 0;
-
-      const msgWords = normalized.split(/\W+/).filter(Boolean);
 
       FAQ_KB.forEach(item => {
         let score = 0;
         const qWords = item.question.toLowerCase().split(/\W+/).filter(Boolean);
 
-        // keyword matches
+        // keyword matches (strong weight)
         item.keywords.forEach(kw => {
           if (normalized.includes(kw.toLowerCase())) {
             score += 2;
@@ -357,8 +387,20 @@
         }
       });
 
-      if (!best || bestScore === 0) {
-        return "I'm not totally sure about that. You can contact our recruitment team at recruitment@technova.lk or call 011-2345678 during working hours.";
+      // 3. Validation: if not confident, explain what the bot can answer
+      const MIN_SCORE = 2; // small threshold so random text doesn't trigger FAQ
+
+      if (!best || bestScore < MIN_SCORE) {
+        return (
+          "I’m mainly designed to help with *recruitment & talent acquisition* at TechNova 😊\n\n" +
+          "You can ask me about:\n" +
+          "• Job applications & required documents\n" +
+          "• Interviews (process, preparation, rescheduling)\n" +
+          "• Internal vacancies & promotions\n" +
+          "• Offers, salary discussion & onboarding\n\n" +
+          "For other questions, please contact the recruitment team at " +
+          "recruitment@technova.lk or call 011-2345678 during working hours."
+        );
       }
 
       return best.answer;
@@ -366,9 +408,11 @@
 
     function handleSend() {
       const text = userInput.value.trim();
-      if (!text) return;
+      if (!text) return; // simple validation: don't send empty message
+
       appendMessage("user", text);
       userInput.value = "";
+
       const botReply = getBotResponse(text);
       setTimeout(() => {
         appendMessage("bot", botReply);
@@ -383,10 +427,10 @@
       }
     });
 
-    // Initial greeting
+    // Initial greeting message when page loads
     appendMessage(
       "bot",
-      "Hello! I'm TechNova's Recruitment Assistant.\nYou can ask me about job applications, interviews, internal opportunities, offers, and more."
+      "Hello! 👋 I'm TechNova's Recruitment Assistant.\nYou can ask me about job applications, interviews, internal opportunities, offers, and more."
     );
   </script>
 </body>
