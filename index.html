@@ -48,6 +48,7 @@
       font-size: 20px;
       flex-shrink: 0;
       box-shadow: 0 6px 16px rgba(15, 23, 42, 0.35);
+      animation: pulse 2.4s ease-in-out infinite;
     }
     .header-text {
       display: flex;
@@ -81,6 +82,12 @@
       50% { transform: rotate(-4deg); }
       60% { transform: rotate(10deg); }
       100% { transform: rotate(0deg); }
+    }
+
+    /* avatar pulse */
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 6px 16px rgba(15, 23, 42, 0.35); }
+      50% { transform: scale(1.05); box-shadow: 0 10px 24px rgba(79, 70, 229, 0.45); }
     }
 
     .mode-toggle {
@@ -167,6 +174,7 @@
       word-wrap: break-word;
       white-space: pre-line;
       position: relative;
+      animation: bubbleIn 0.22s ease-out;
     }
     .message.bot .bubble {
       background: #ffffff;
@@ -178,6 +186,18 @@
       background: #4f46e5;
       color: #ffffff;
       border-bottom-right-radius: 4px;
+    }
+
+    /* bubble entrance */
+    @keyframes bubbleIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     /* per-message avatars */
@@ -622,7 +642,32 @@
         );
       }
 
-      // 2) FAQ matching
+      // 2) explicit company-background intent (to catch loose phrasing)
+      if (
+        (normalized.includes("technova") &&
+          (normalized.includes("about") ||
+           normalized.includes("company") ||
+           normalized.includes("background") ||
+           normalized.includes("info") ||
+           normalized.includes("information") ||
+           normalized.includes("details") ||
+           normalized.includes("history"))) ||
+        normalized.includes("about company") ||
+        normalized.includes("about the company") ||
+        normalized.includes("company background") ||
+        normalized.includes("company details")
+      ) {
+        return (
+          "Here’s a quick overview of TechNova:\n\n" +
+          "• TechNova Solutions (Pvt) Ltd. is a Sri Lankan software development and IT services company established in 2000.\n" +
+          "• We have around 95 employees and have successfully delivered over 2,000 software projects.\n" +
+          "• Our clients are mainly from Sri Lanka, the United Kingdom, Australia, the United Arab Emirates, Singapore, and other regions.\n\n" +
+          "Sample office address used in this prototype:\n" +
+          "TechNova Solutions (Pvt) Ltd.\nNo. 45, Greenfield Avenue,\nColombo 07,\nSri Lanka."
+        );
+      }
+
+      // 3) FAQ matching
       const msgWords = normalized.split(/\W+/).filter(Boolean);
       let best = null;
       let bestScore = 0;
@@ -650,7 +695,7 @@
 
       const MIN_SCORE = 2;
 
-      // NEW: strict validation-style fallback
+      // strict validation-style fallback
       if (!best || bestScore < MIN_SCORE) {
         return (
           "I’m sorry, I don’t have an answer for that in my predefined FAQs. 🙏\n\n" +
