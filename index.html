@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TechNova Recruitment Chatbot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #eef2ff, #e0f2fe);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .container {
+      background: #ffffff;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 24px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.15);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #f97316, #4f46e5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .header-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .header-subtitle {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .chat-window {
+      padding: 16px;
+      background: #f4f5fb;
+      flex: 1;
+      overflow-y: auto;
+      max-height: 70vh;
+    }
+    .message {
+      margin-bottom: 12px;
+      display: flex;
+    }
+    .message.bot {
+      justify-content: flex-start;
+    }
+    .message.user {
+      justify-content: flex-end;
+    }
+    .bubble {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+      white-space: pre-line;
+    }
+    .message.bot .bubble {
+      background: #ffffff;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
+      border-bottom-left-radius: 4px;
+    }
+    .message.user .bubble {
+      background: #4f46e5;
+      color: #ffffff;
+      border-bottom-right-radius: 4px;
+    }
+    .footer {
+      padding: 10px 12px;
+      border-top: 1px solid #e5e7eb;
+      background: #ffffff;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .footer input[type="text"] {
+      flex: 1;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      padding: 10px 14px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .footer input[type="text"]:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.2);
+    }
+    .footer button {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      background: #4f46e5;
+      color: #ffffff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+      flex-shrink: 0;
+    }
+    .footer button:hover {
+      background: #4338ca;
+      box-shadow: 0 6px 14px rgba(79, 70, 229, 0.35);
+      transform: translateY(-1px);
+    }
+    .footer button:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+    .send-icon {
+      font-size: 14px;
+    }
+    .quick-hints {
+      padding: 0 16px 8px;
+      font-size: 11px;
+      color: #9ca3af;
+    }
+    @media (max-width: 480px) {
+      .container {
+        border-radius: 20px;
+      }
+      .chat-window {
+        max-height: calc(100vh - 180px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="avatar">T</div>
+      <div class="header-text">
+        <div class="header-title">TechNova Recruitment Bot</div>
+        <div class="header-subtitle">Ask me about jobs, interviews & internal vacancies</div>
+      </div>
+    </div>
+    <div class="quick-hints">
+      Try: "How do I apply?", "Do you hire fresh graduates?", "Can I negotiate salary?"
+    </div>
+    <div id="chat-window" class="chat-window"></div>
+    <div class="footer">
+      <input
+        type="text"
+        id="user-input"
+        placeholder="Type your question here..."
+        autocomplete="off"
+      />
+      <button id="send-btn">
+        <span class="send-icon">➤</span>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const FAQ_KB = [
+      {
+        question: "How can I apply for a job at TechNova?",
+        keywords: ["apply", "job", "career portal", "careers", "cv", "application"],
+        answer:
+          "You can apply through our Career Portal or send your CV to careers@technova.lk. You will receive a confirmation email once your application is submitted."
+      },
+      {
+        question: "What documents do I need to submit with the application?",
+        keywords: ["documents", "cv", "certificates", "portfolio", "nic", "passport"],
+        answer:
+          "Please attach:\n- Updated CV\n- Educational certificates (optional at initial stage)\n- Portfolio (for design and tech roles)\n- NIC/Passport copy (optional)"
+      },
+      {
+        question: "How long does the selection process take?",
+        keywords: ["selection process", "how long", "time", "duration"],
+        answer:
+          "The full process usually takes 2–3 weeks, depending on the position and number of applicants."
+      },
+      {
+        question: "What are the steps of the selection process?",
+        keywords: ["steps", "process", "recruitment process", "interview steps"],
+        answer:
+          "Our recruitment process includes:\n1. Application screening\n2. HR phone interview\n3. Technical interview\n4. Final interview with the Hiring Manager\n5. Reference check\n6. Job offer"
+      },
+      {
+        question: "Will I be informed if I am not selected?",
+        keywords: ["not selected", "rejected", "inform", "email update"],
+        answer:
+          "Yes. All candidates receive an email update within 10 working days after their interview."
+      },
+      {
+        question: "What happens if I cannot attend the scheduled interview?",
+        keywords: ["cannot attend", "reschedule", "interview", "change time"],
+        answer:
+          "You can request to reschedule through the link sent in your interview email or contact HR at hr@technova.lk."
+      },
+      {
+        question: "How can current employees apply for internal vacancies?",
+        keywords: ["internal vacancies", "internal jobs", "current employees", "hris"],
+        answer:
+          "Log in to the Internal Career Portal on the HRIS dashboard and submit your interest. You must inform your line manager before applying."
+      },
+      {
+        question: "Can interns apply for permanent jobs?",
+        keywords: ["interns", "permanent jobs", "internship"],
+        answer:
+          "Yes. Interns with good performance and completed evaluations can apply for entry-level roles."
+      },
+      {
+        question: "What is the eligibility for internal promotions?",
+        keywords: ["internal promotions", "promotion", "eligibility"],
+        answer:
+          "Eligibility for internal promotions includes:\n- Completion of 1 year in the current role\n- Good performance record\n- No active disciplinary issues\n- Relevant qualifications or skills"
+      },
+      {
+        question: "How do I know if I qualify for a job?",
+        keywords: ["qualify", "requirements", "eligibility", "skills", "experience"],
+        answer:
+          "Each vacancy includes required skills, experience, and qualifications. You may still apply if you meet most of the criteria."
+      },
+      {
+        question: "Are all jobs posted publicly?",
+        keywords: ["jobs posted", "publicly", "internal only", "job posting"],
+        answer:
+          "Most jobs are public, but some roles are posted internally first."
+      },
+      {
+        question: "How should I prepare for my interview?",
+        keywords: ["prepare", "interview tips", "how to prepare"],
+        answer:
+          "To prepare for your interview:\n- Review the job description\n- Research TechNova's products and clients\n- Be ready to share examples of your work\n- Practice common interview questions"
+      },
+      {
+        question: "Will interviews be physical or online?",
+        keywords: ["physical", "online", "onsite", "remote interview", "mode"],
+        answer:
+          "We conduct both. You will be notified in your interview invitation email."
+      },
+      {
+        question: "How will I receive my job offer?",
+        keywords: ["job offer", "offer letter", "receive offer"],
+        answer:
+          "Selected candidates receive an official email offer letter followed by contract signing."
+      },
+      {
+        question: "Can I negotiate my salary?",
+        keywords: ["negotiate", "salary", "compensation"],
+        answer:
+          "Yes. You may discuss your compensation during the final HR discussion."
+      },
+      {
+        question: "When does onboarding start?",
+        keywords: ["onboarding", "start date", "joining"],
+        answer:
+          "Onboarding begins one week before your start date. Your HR buddy will guide you."
+      },
+      {
+        question: "Does TechNova allow employee referrals?",
+        keywords: ["referral", "employee referral", "referral bonus"],
+        answer:
+          "Yes! Employees can refer candidates through the Referral Portal and earn a bonus."
+      },
+      {
+        question: "Does TechNova hire fresh graduates?",
+        keywords: ["fresh graduates", "graduate program", "trainee", "entry level"],
+        answer:
+          "Yes, we run annual Graduate Training Programs in IT, HR, Marketing, and Finance."
+      },
+      {
+        question: "Are part-time or remote jobs available?",
+        keywords: ["part-time", "remote", "hybrid", "work from home"],
+        answer:
+          "Some roles support remote or hybrid work. Details are included in each job posting."
+      },
+      {
+        question: "How can I contact the recruitment team?",
+        keywords: ["contact", "recruitment team", "phone", "email"],
+        answer:
+          "You can contact the recruitment team via email at recruitment@technova.lk or call 011-2345678 during working hours."
+      }
+    ];
+
+    const chatWindow = document.getElementById("chat-window");
+    const userInput = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send-btn");
+
+    function appendMessage(sender, text) {
+      const msg = document.createElement("div");
+      msg.className = "message " + sender;
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+
+      msg.appendChild(bubble);
+      chatWindow.appendChild(msg);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function getBotResponse(message) {
+      const normalized = message.toLowerCase();
+      let best = null;
+      let bestScore = 0;
+
+      const msgWords = normalized.split(/\W+/).filter(Boolean);
+
+      FAQ_KB.forEach(item => {
+        let score = 0;
+        const qWords = item.question.toLowerCase().split(/\W+/).filter(Boolean);
+
+        // keyword matches
+        item.keywords.forEach(kw => {
+          if (normalized.includes(kw.toLowerCase())) {
+            score += 2;
+          }
+        });
+
+        // word overlap with question
+        const common = msgWords.filter(w => qWords.includes(w));
+        score += common.length;
+
+        if (score > bestScore) {
+          bestScore = score;
+          best = item;
+        }
+      });
+
+      if (!best || bestScore === 0) {
+        return "I'm not totally sure about that. You can contact our recruitment team at recruitment@technova.lk or call 011-2345678 during working hours.";
+      }
+
+      return best.answer;
+    }
+
+    function handleSend() {
+      const text = userInput.value.trim();
+      if (!text) return;
+      appendMessage("user", text);
+      userInput.value = "";
+      const botReply = getBotResponse(text);
+      setTimeout(() => {
+        appendMessage("bot", botReply);
+      }, 200);
+    }
+
+    sendBtn.addEventListener("click", handleSend);
+    userInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleSend();
+      }
+    });
+
+    // Initial greeting
+    appendMessage(
+      "bot",
+      "Hello! I'm TechNova's Recruitment Assistant.\nYou can ask me about job applications, interviews, internal opportunities, offers, and more."
+    );
+  </script>
+</body>
+</html>
