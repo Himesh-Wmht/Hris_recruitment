@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>TechNova Recruitment Chatbot</title>
+  <title>Nova – HR Buddy | TechNova Recruitment Chatbot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     * {
@@ -36,8 +36,8 @@
       gap: 10px;
     }
     .avatar {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border-radius: 999px;
       background: radial-gradient(circle at 30% 30%, #f97316, #4f46e5);
       display: flex;
@@ -47,6 +47,7 @@
       font-weight: 700;
       font-size: 20px;
       flex-shrink: 0;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, 0.35);
     }
     .header-text {
       display: flex;
@@ -96,7 +97,8 @@
       font-size: 11px;
       cursor: pointer;
       color: #4b5563;
-      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      transition: background 0.15s ease, color 0.15s ease,
+        border-color 0.15s ease, box-shadow 0.15s ease;
     }
     .mode-btn.active {
       background: #4f46e5;
@@ -126,7 +128,8 @@
       font-size: 11px;
       cursor: pointer;
       color: #4b5563;
-      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      transition: background 0.15s ease, color 0.15s ease,
+        border-color 0.15s ease, box-shadow 0.15s ease;
     }
     .topic-btn:hover {
       background: #4f46e5;
@@ -145,6 +148,8 @@
     .message {
       margin-bottom: 12px;
       display: flex;
+      align-items: flex-end;
+      gap: 6px;
     }
     .message.bot {
       justify-content: flex-start;
@@ -152,6 +157,7 @@
     .message.user {
       justify-content: flex-end;
     }
+
     .bubble {
       max-width: 80%;
       padding: 10px 14px;
@@ -160,6 +166,7 @@
       line-height: 1.4;
       word-wrap: break-word;
       white-space: pre-line;
+      position: relative;
     }
     .message.bot .bubble {
       background: #ffffff;
@@ -172,6 +179,29 @@
       color: #ffffff;
       border-bottom-right-radius: 4px;
     }
+
+    /* per-message avatars */
+    .msg-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .bot-avatar {
+      background: radial-gradient(circle at 30% 30%, #f97316, #4f46e5);
+      color: #ffffff;
+      box-shadow: 0 3px 8px rgba(15, 23, 42, 0.3);
+    }
+    .user-avatar {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
     .footer {
       padding: 10px 12px;
       border-top: 1px solid #e5e7eb;
@@ -221,6 +251,52 @@
       font-size: 14px;
     }
 
+    /* welcome animation for first bot message */
+    .message.bot.welcome {
+      animation: welcomeIn 0.5s ease-out;
+    }
+    @keyframes welcomeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* typing / thinking animation */
+    .typing-bubble {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      min-width: 40px;
+    }
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #9ca3af;
+      animation: typing 1s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes typing {
+      0%, 80%, 100% {
+        opacity: 0.3;
+        transform: translateY(0);
+      }
+      40% {
+        opacity: 1;
+        transform: translateY(-2px);
+      }
+    }
+
     @media (max-width: 480px) {
       .container {
         border-radius: 20px;
@@ -234,13 +310,13 @@
 <body>
   <div class="container">
     <div class="header">
-      <div class="avatar">💬</div>
+      <div class="avatar">N</div>
       <div class="header-text">
         <div class="header-title">
-          TechNova Recruitment Bot
+          Nova – HR Buddy
           <span class="wave-icon">👋</span>
         </div>
-        <div class="header-subtitle">Ask me about jobs, interviews & internal vacancies</div>
+        <div class="header-subtitle">TechNova's virtual HR assistant for recruitment queries</div>
       </div>
     </div>
 
@@ -250,7 +326,7 @@
     </div>
 
     <div class="quick-hints">
-      You can ask me about:
+      You can ask Nova about:
     </div>
     <div class="topic-options">
       <button class="topic-btn" data-topic="applications">Job applications & required documents</button>
@@ -275,7 +351,7 @@
   </div>
 
   <script>
-    // 👇 replace this with your own external AI/chat URL if you have one
+    // External AI assistant URL (for Ask Anything mode)
     const GENERAL_AI_URL = "https://chat.openai.com/";
 
     const FAQ_KB = [
@@ -437,17 +513,61 @@
     let currentMode = "recruitment";
     let generalOpened = false;
 
-    function appendMessage(sender, text) {
+    function appendMessage(sender, text, extraClass) {
       const msg = document.createElement("div");
       msg.className = "message " + sender;
+      if (extraClass) {
+        msg.classList.add(extraClass);
+      }
 
       const bubble = document.createElement("div");
       bubble.className = "bubble";
       bubble.textContent = text;
 
+      const avatar = document.createElement("div");
+      avatar.className =
+        "msg-avatar " + (sender === "bot" ? "bot-avatar" : "user-avatar");
+      avatar.textContent = sender === "bot" ? "N" : "You";
+
+      if (sender === "bot") {
+        msg.appendChild(avatar);
+        msg.appendChild(bubble);
+      } else {
+        msg.appendChild(bubble);
+        msg.appendChild(avatar);
+      }
+
+      chatWindow.appendChild(msg);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+      const msg = document.createElement("div");
+      msg.className = "message bot typing";
+
+      const avatar = document.createElement("div");
+      avatar.className = "msg-avatar bot-avatar";
+      avatar.textContent = "N";
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble typing-bubble";
+      bubble.innerHTML =
+        '<span class="typing-dot"></span>' +
+        '<span class="typing-dot"></span>' +
+        '<span class="typing-dot"></span>';
+
+      msg.appendChild(avatar);
       msg.appendChild(bubble);
       chatWindow.appendChild(msg);
       chatWindow.scrollTop = chatWindow.scrollHeight;
+
+      return msg;
+    }
+
+    function removeTypingIndicator(msg) {
+      if (msg && msg.parentNode) {
+        msg.parentNode.removeChild(msg);
+      }
     }
 
     function isGreeting(message) {
@@ -463,8 +583,7 @@
       // 1) greetings
       if (isGreeting(message)) {
         return (
-          "Hi there! 👋\n" +
-          "I'm TechNova's Recruitment Assistant.\n" +
+          "Hi there! 👋 I'm Nova, your HR buddy.\n" +
           "You can tap one of the options above or ask me questions like:\n" +
           "• How do I apply for a job?\n" +
           "• Do you hire fresh graduates?\n" +
@@ -524,25 +643,30 @@
       userInput.value = "";
 
       if (currentMode === "general") {
+        const typingMsg = showTypingIndicator();
         const info =
           "This question is being handled by our general AI assistant.\n\n" +
-          "Open this link in your browser to continue the conversation:\n" +
+          "Open this link in your browser to continue the conversation with a full AI model:\n" +
           GENERAL_AI_URL;
 
         setTimeout(() => {
+          removeTypingIndicator(typingMsg);
           appendMessage("bot", info);
           if (!generalOpened) {
             window.open(GENERAL_AI_URL, "_blank");
             generalOpened = true;
           }
-        }, 200);
+        }, 700);
         return;
       }
 
+      const typingMsg = showTypingIndicator();
       const botReply = getRecruitmentResponse(text);
+
       setTimeout(() => {
+        removeTypingIndicator(typingMsg);
         appendMessage("bot", botReply);
-      }, 200);
+      }, 700);
     }
 
     sendBtn.addEventListener("click", handleSend);
@@ -563,7 +687,7 @@
         if (currentMode === "recruitment") {
           appendMessage(
             "bot",
-            "You’re now in Recruitment Q&A mode. Ask me anything about TechNova hiring, interviews, internal vacancies, offers, and more."
+            "You’re now in Recruitment Q&A mode with Nova. Ask me anything about TechNova hiring, interviews, internal vacancies, offers, and more."
           );
         } else {
           appendMessage(
@@ -599,16 +723,19 @@
           TOPIC_RESPONSES[topic] ||
           "You can ask any detailed question about this area, and I'll do my best to help.";
 
+        const typingMsg = showTypingIndicator();
         setTimeout(() => {
+          removeTypingIndicator(typingMsg);
           appendMessage("bot", reply);
-        }, 200);
+        }, 600);
       });
     });
 
-    // Initial greeting
+    // Initial greeting with welcome animation
     appendMessage(
       "bot",
-      "Hello! 👋 I'm TechNova's Recruitment Assistant.\nTap one of the options above or ask me about job applications, interviews, internal opportunities, offers, and more."
+      "Hello! 👋 I'm Nova, your HR buddy at TechNova.\nTap one of the options above or ask me about job applications, interviews, internal opportunities, offers, and more.",
+      "welcome"
     );
   </script>
 </body>
