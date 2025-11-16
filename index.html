@@ -316,7 +316,7 @@
           Nova – HR Buddy
           <span class="wave-icon">👋</span>
         </div>
-        <div class="header-subtitle">TechNova's virtual HR assistant for recruitment queries</div>
+        <div class="header-subtitle">TechNova's virtual HR assistant for recruitment & company queries</div>
       </div>
     </div>
 
@@ -355,6 +355,36 @@
     const GENERAL_AI_URL = "https://chat.openai.com/";
 
     const FAQ_KB = [
+      {
+        question: "Tell me about TechNova",
+        keywords: ["about technova", "company background", "about the company", "what is technova", "who are you", "company details"],
+        answer:
+          "TechNova Solutions (Pvt) Ltd. is a Sri Lankan software development and IT services company established in 2000. We have around 95 employees and have successfully delivered over 2,000 software projects for clients in Sri Lanka, the United Kingdom, Australia, the United Arab Emirates, Singapore, and more."
+      },
+      {
+        question: "When was TechNova founded?",
+        keywords: ["when started", "when founded", "year established", "since when", "company history"],
+        answer:
+          "TechNova Solutions (Pvt) Ltd. was founded in the year 2000 and has been delivering software solutions and IT services for more than two decades."
+      },
+      {
+        question: "How many employees does TechNova have?",
+        keywords: ["how many employees", "staff size", "how big", "team size", "number of employees"],
+        answer:
+          "TechNova currently has a team of around 95 employees, including software engineers, UI/UX designers, QA analysts, HR professionals, project managers, and technical support staff."
+      },
+      {
+        question: "How many projects has TechNova completed?",
+        keywords: ["how many projects", "projects done", "project count", "experience", "clients"],
+        answer:
+          "TechNova has successfully completed more than 2,000 software projects across various domains for clients in Sri Lanka, the UK, Australia, the UAE, Singapore, and other regions."
+      },
+      {
+        question: "Where is TechNova located?",
+        keywords: ["address", "location", "office", "where are you", "colombo 7", "head office"],
+        answer:
+          "Our sample office address used for this chatbot prototype is:\n\nTechNova Solutions (Pvt) Ltd.\nNo. 45, Greenfield Avenue,\nColombo 07,\nSri Lanka.\n\nThis is a sample address for demonstration and can be replaced with the official registered address."
+      },
       {
         question: "How can I apply for a job at TechNova?",
         keywords: ["apply", "job", "career portal", "careers", "cv", "application"],
@@ -587,7 +617,8 @@
           "You can tap one of the options above or ask me questions like:\n" +
           "• How do I apply for a job?\n" +
           "• Do you hire fresh graduates?\n" +
-          "• Can I negotiate my salary?"
+          "• Can I negotiate my salary?\n" +
+          "• Tell me about TechNova as a company."
         );
       }
 
@@ -619,16 +650,13 @@
 
       const MIN_SCORE = 2;
 
+      // NEW: strict validation-style fallback
       if (!best || bestScore < MIN_SCORE) {
         return (
-          "I’m mainly designed to help with recruitment & talent acquisition at TechNova 😊\n\n" +
-          "You can tap one of the options above or ask me about:\n" +
-          "• Job applications & required documents\n" +
-          "• Interviews (process, preparation, rescheduling)\n" +
-          "• Internal vacancies & promotions\n" +
-          "• Offers, salary discussion & onboarding\n\n" +
-          "For other questions, please contact the recruitment team at " +
-          "recruitment@technova.lk or call 011-2345678 during working hours."
+          "I’m sorry, I don’t have an answer for that in my predefined FAQs. 🙏\n\n" +
+          "For this type of query, please contact our recruitment team directly:\n" +
+          "📧 Email: recruitment@technova.lk\n" +
+          "☎️ Phone: 011-2345678 (during working hours)."
         );
       }
 
@@ -687,12 +715,12 @@
         if (currentMode === "recruitment") {
           appendMessage(
             "bot",
-            "You’re now in Recruitment Q&A mode with Nova. Ask me anything about TechNova hiring, interviews, internal vacancies, offers, and more."
+            "You’re now in Recruitment Q&A mode with Nova. Ask me anything about TechNova hiring, interviews, internal vacancies, offers, or basic company background."
           );
         } else {
           appendMessage(
             "bot",
-            "You’re now in Ask Anything mode. For general questions (not limited to recruitment), I’ll redirect you to our AI assistant:\n" +
+            "You’re now in Ask Anything mode. For general questions (not limited to recruitment), I’ll redirect you to our external AI assistant:\n" +
             GENERAL_AI_URL
           );
         }
@@ -734,7 +762,7 @@
     // Initial greeting with welcome animation
     appendMessage(
       "bot",
-      "Hello! 👋 I'm Nova, your HR buddy at TechNova.\nTap one of the options above or ask me about job applications, interviews, internal opportunities, offers, and more.",
+      "Hello! 👋 I'm Nova, your HR buddy at TechNova.\nTap one of the options above or ask me about job applications, interviews, internal opportunities, offers, or basic company background.",
       "welcome"
     );
   </script>
