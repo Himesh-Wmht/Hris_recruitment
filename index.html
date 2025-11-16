@@ -626,7 +626,6 @@
       return regex.test(trimmed);
     }
 
-    // Recruitment-mode response
     function getRecruitmentResponse(message) {
       const normalized = message.toLowerCase().trim();
 
@@ -642,8 +641,12 @@
         );
       }
 
-      // 2) explicit company-background intent (to catch loose phrasing)
+      // 2) explicit company-background intent (also handles one-word queries)
       if (
+        normalized === "about" ||
+        normalized === "background" ||
+        normalized === "about us" ||
+        normalized === "company" ||
         (normalized.includes("technova") &&
           (normalized.includes("about") ||
            normalized.includes("company") ||
