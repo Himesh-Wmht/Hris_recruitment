@@ -29,7 +29,7 @@
       overflow: hidden;
     }
     .header {
-      padding: 16px 20px 12px;
+      padding: 16px 20px 8px;
       border-bottom: 1px solid #e5e7eb;
       display: flex;
       align-items: center;
@@ -45,7 +45,7 @@
       justify-content: center;
       color: #fff;
       font-weight: 700;
-      font-size: 18px;
+      font-size: 20px;
       flex-shrink: 0;
     }
     .header-text {
@@ -57,10 +57,58 @@
       font-size: 16px;
       font-weight: 600;
       color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     .header-subtitle {
       font-size: 12px;
       color: #6b7280;
+    }
+
+    /* waving hand animation */
+    .wave-icon {
+      display: inline-block;
+      transform-origin: 70% 70%;
+      animation: wave 1.4s ease-in-out infinite;
+    }
+    @keyframes wave {
+      0% { transform: rotate(0deg); }
+      15% { transform: rotate(14deg); }
+      30% { transform: rotate(-8deg); }
+      40% { transform: rotate(14deg); }
+      50% { transform: rotate(-4deg); }
+      60% { transform: rotate(10deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    .mode-toggle {
+      padding: 4px 16px 0;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .mode-btn {
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      padding: 6px 12px;
+      font-size: 11px;
+      cursor: pointer;
+      color: #4b5563;
+      transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .mode-btn.active {
+      background: #4f46e5;
+      color: #ffffff;
+      border-color: #4f46e5;
+      box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+    }
+
+    .quick-hints {
+      padding: 4px 16px 8px;
+      font-size: 11px;
+      color: #9ca3af;
     }
     .chat-window {
       padding: 16px;
@@ -147,17 +195,13 @@
     .send-icon {
       font-size: 14px;
     }
-    .quick-hints {
-      padding: 0 16px 8px;
-      font-size: 11px;
-      color: #9ca3af;
-    }
+
     @media (max-width: 480px) {
       .container {
         border-radius: 20px;
       }
       .chat-window {
-        max-height: calc(100vh - 180px);
+        max-height: calc(100vh - 200px);
       }
     }
   </style>
@@ -165,16 +209,27 @@
 <body>
   <div class="container">
     <div class="header">
-      <div class="avatar">T</div>
+      <div class="avatar">💬</div>
       <div class="header-text">
-        <div class="header-title">TechNova Recruitment Bot</div>
+        <div class="header-title">
+          TechNova Recruitment Bot
+          <span class="wave-icon">👋</span>
+        </div>
         <div class="header-subtitle">Ask me about jobs, interviews & internal vacancies</div>
       </div>
     </div>
+
+    <div class="mode-toggle">
+      <button class="mode-btn active" data-mode="recruitment">Recruitment Q&A</button>
+      <button class="mode-btn" data-mode="general">Ask Anything (AI)</button>
+    </div>
+
     <div class="quick-hints">
       Try: "How do I apply?", "Do you hire fresh graduates?", "Can I negotiate salary?"
     </div>
+
     <div id="chat-window" class="chat-window"></div>
+
     <div class="footer">
       <input
         type="text"
@@ -189,6 +244,9 @@
   </div>
 
   <script>
+    // 👇 replace this with your own external AI/chat URL if you have one
+    const GENERAL_AI_URL = "https://chat.openai.com/";
+
     const FAQ_KB = [
       {
         question: "How can I apply for a job at TechNova?",
@@ -315,6 +373,10 @@
     const chatWindow = document.getElementById("chat-window");
     const userInput = document.getElementById("user-input");
     const sendBtn = document.getElementById("send-btn");
+    const modeButtons = document.querySelectorAll(".mode-btn");
+
+    let currentMode = "recruitment";
+    let generalOpened = false;
 
     function appendMessage(sender, text) {
       const msg = document.createElement("div");
@@ -329,27 +391,18 @@
       chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 
-    // Detect greeting like "Hi", "Hy", "Hello", "Hey"
     function isGreeting(message) {
-      const text = message.trim().toLowerCase();
-      const greetings = [
-        "hi",
-        "hy",
-        "hello",
-        "hey",
-        "hiya",
-        "good morning",
-        "good afternoon",
-        "good evening"
-      ];
-      return greetings.some(g => text === g || text.startsWith(g + " "));
+      const trimmed = message.trim();
+      const regex = /^(hi|hy|hello|hey|hiya|good morning|good afternoon|good evening)\b/i;
+      return regex.test(trimmed);
     }
 
-    function getBotResponse(message) {
+    // Recruitment-mode response
+    function getRecruitmentResponse(message) {
       const normalized = message.toLowerCase().trim();
 
-      // 1. Handle greetings with a warm reply + emoji 👋
-      if (isGreeting(normalized)) {
+      // 1) special handling for greetings
+      if (isGreeting(message)) {
         return (
           "Hi there! 👋\n" +
           "I'm TechNova's Recruitment Assistant.\n" +
@@ -361,7 +414,7 @@
         );
       }
 
-      // 2. FAQ matching logic
+      // 2) FAQ matching
       const msgWords = normalized.split(/\W+/).filter(Boolean);
       let best = null;
       let bestScore = 0;
@@ -370,14 +423,14 @@
         let score = 0;
         const qWords = item.question.toLowerCase().split(/\W+/).filter(Boolean);
 
-        // keyword matches (strong weight)
+        // keyword matches
         item.keywords.forEach(kw => {
           if (normalized.includes(kw.toLowerCase())) {
             score += 2;
           }
         });
 
-        // word overlap with question
+        // word overlap
         const common = msgWords.filter(w => qWords.includes(w));
         score += common.length;
 
@@ -387,12 +440,11 @@
         }
       });
 
-      // 3. Validation: if not confident, explain what the bot can answer
-      const MIN_SCORE = 2; // small threshold so random text doesn't trigger FAQ
+      const MIN_SCORE = 2;
 
       if (!best || bestScore < MIN_SCORE) {
         return (
-          "I’m mainly designed to help with *recruitment & talent acquisition* at TechNova 😊\n\n" +
+          "I’m mainly designed to help with recruitment & talent acquisition at TechNova 😊\n\n" +
           "You can ask me about:\n" +
           "• Job applications & required documents\n" +
           "• Interviews (process, preparation, rescheduling)\n" +
@@ -408,12 +460,31 @@
 
     function handleSend() {
       const text = userInput.value.trim();
-      if (!text) return; // simple validation: don't send empty message
+      if (!text) return;
 
       appendMessage("user", text);
       userInput.value = "";
 
-      const botReply = getBotResponse(text);
+      // Mode-specific behaviour
+      if (currentMode === "general") {
+        const info =
+          "This question is being handled by our general AI assistant.\n\n" +
+          "Open this link in your browser to continue the conversation:\n" +
+          GENERAL_AI_URL;
+
+        setTimeout(() => {
+          appendMessage("bot", info);
+          if (!generalOpened) {
+            // open once per session; you can remove this if you want every message to open a tab
+            window.open(GENERAL_AI_URL, "_blank");
+            generalOpened = true;
+          }
+        }, 200);
+        return;
+      }
+
+      // Recruitment mode
+      const botReply = getRecruitmentResponse(text);
       setTimeout(() => {
         appendMessage("bot", botReply);
       }, 200);
@@ -427,7 +498,29 @@
       }
     });
 
-    // Initial greeting message when page loads
+    // Mode toggle buttons
+    modeButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        modeButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentMode = btn.dataset.mode;
+
+        if (currentMode === "recruitment") {
+          appendMessage(
+            "bot",
+            "You’re now in Recruitment Q&A mode. Ask me anything about TechNova hiring, interviews, internal vacancies, offers, and more."
+          );
+        } else {
+          appendMessage(
+            "bot",
+            "You’re now in Ask Anything mode. For general questions (not limited to recruitment), I’ll redirect you to our AI assistant:\n" +
+            GENERAL_AI_URL
+          );
+        }
+      });
+    });
+
+    // Initial greeting
     appendMessage(
       "bot",
       "Hello! 👋 I'm TechNova's Recruitment Assistant.\nYou can ask me about job applications, interviews, internal opportunities, offers, and more."
